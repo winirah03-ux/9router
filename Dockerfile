@@ -128,11 +128,13 @@ RUN mkdir -p /app/data && chown -R node:node /app && \
 
 # Avoid a full distribution upgrade in the runtime image. It makes builds less
 # reproducible and is unrelated to installing the runtime entrypoint helper.
-RUN apk add --no-cache su-exec curl ca-certificates gcompat libstdc++ && \
-  printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
-  chmod +x /entrypoint.sh
+RUN apk add --no-cache su-exec curl ca-certificates gcompat libstdc++ openssh-server shadow
 
-EXPOSE 20128
+COPY docker-entrypoint.sh /entrypoint.sh
+COPY sshd_config /etc/ssh/sshd_config
+RUN chmod 0755 /entrypoint.sh && mkdir -p /run/sshd
+
+EXPOSE 20128 22
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "custom-server.js"]

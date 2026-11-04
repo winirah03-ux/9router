@@ -19,6 +19,18 @@ docker run -d \
 
 App listens on port `20128`. Open: http://localhost:20128
 
+## Optional SSH access on Railway
+
+SSH is disabled unless `SSH_PASSWORD` is set. Add a unique random password with at least 20 characters to the Railway service variables, then redeploy. The container accepts password authentication only for the unprivileged `node` user; root login and SSH port forwarding are disabled.
+
+In Railway, add a TCP Proxy for the service's port `22` under its networking settings. Connect using the host and port Railway assigns:
+
+```bash
+ssh node@<tcp-proxy-host> -p <tcp-proxy-port>
+```
+
+The SSH host key is generated when the container starts and is not persisted, so it may change after a redeploy. SSH gives shell access to the application container, including files and runtime data; keep `SSH_PASSWORD` private and rotate it if exposed.
+
 ## Manage container
 
 ```bash
