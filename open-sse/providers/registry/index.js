@@ -151,6 +151,8 @@ import p151 from "./deepseek-web.js";
 import p154 from "./veoaifree-web.js";
 import p156 from "./runcrate.js";
 import p157 from "./nace.js";
+import p158 from "./llmtr.js";
+import p160 from "./zcode.js";
 export default [
   p0,
   p1,
@@ -304,4 +306,6 @@ export default [
   p154,
   p156,
   p157,
+  p158,
+  p160,
 ];

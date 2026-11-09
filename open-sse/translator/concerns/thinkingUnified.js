@@ -173,6 +173,27 @@ function normalizeOpenAILevel(level, supportedLevels) {
   return "xhigh";
 }
 
+const EFFORT_ORDER = ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"];
+
+export function mapEffortToSupportedLevel(level, supportedLevels) {
+  const levels = Array.isArray(supportedLevels) ? supportedLevels.filter(Boolean) : [];
+  if (!levels.length) return level && level !== "auto" ? level : "high";
+  if (!level || level === "auto") return levels.includes("high") ? "high" : levels[levels.length - 1];
+  if (levels.includes(level)) return level;
+  const target = EFFORT_ORDER.indexOf(level);
+  if (target < 0) return levels.includes("high") ? "high" : null;
+
+  let up = null;
+  let down = null;
+  for (const candidate of levels) {
+    const index = EFFORT_ORDER.indexOf(candidate);
+    if (index < 0) continue;
+    if (index > target && (up === null || index < EFFORT_ORDER.indexOf(up))) up = candidate;
+    if (index < target && (down === null || index > EFFORT_ORDER.indexOf(down))) down = candidate;
+  }
+  return up ?? down ?? null;
+}
+
 function toGeminiThinkingLevel(cfg) {
   const raw = cfg.mode === "auto" ? "high" : (toLevel(cfg) || "high");
   return effortToThinkingLevel(raw);
@@ -343,6 +364,19 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display, model = "")
       }
       break;
     }
+    case "zai-anthropic": {
+      const level = toLevel(eff);
+      if (canDisable && (none || level === "none" || level === "minimal")) {
+        body.thinking = { type: "disabled" };
+        delete body.output_config;
+        break;
+      }
+      body.thinking = { type: "enabled" };
+      const mapped = mapEffortToSupportedLevel(level, supportedLevels);
+      if (mapped) body.output_config = { effort: mapped };
+      else delete body.output_config;
+      break;
+    }
     case "qwen": {
       if (none && canDisable) { body.enable_thinking = false; break; }
       body.enable_thinking = true;
@@ -394,6 +428,13 @@ function applyFormat(fmt, body, cfg, caps, supportedLevels, display, model = "")
         enabled: true,
         ...(level ? { effort: level } : {}),
       };
+      break;
+    }
+    case "llmtr": {
+      // Chat Completions takes `reasoning` as a boolean. A Responses-style
+      // object ({effort,summary}) is rejected. Effort levels collapse to on/off.
+      if (none && canDisable) { body.reasoning = false; break; }
+      body.reasoning = true;
       break;
     }
     case "tokenrouter": {

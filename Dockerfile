@@ -55,7 +55,7 @@ RUN APP_REVISION="${APP_REVISION:-$RAILWAY_GIT_COMMIT_SHA}" npm run build
 # so the runner stage can copy them into /app/node_modules.
 RUN mkdir -p /opt/lazy-runtime && cd /opt/lazy-runtime && \
     npm init -y >/dev/null && \
-    npm install --no-save \
+    npm install \
       --registry="${NPM_REGISTRY}" \
       --fetch-retries=5 \
       --fetch-retry-factor=2 \
